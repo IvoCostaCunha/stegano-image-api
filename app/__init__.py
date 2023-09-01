@@ -6,6 +6,7 @@ from app.endpoints.auth import auth
 from app.endpoints.files import files
 from app.endpoints.user import user
 
+from app.scripts.fileManager import fileManager
 from app.scripts.lsb import lsb
 from app.scripts.aws import aws
 
@@ -33,6 +34,7 @@ def create_app(test_config = None):
   db.app = app
   db.init_app(app)
   
+  app.register_blueprint(fileManager)
   app.register_blueprint(lsb)
   app.register_blueprint(aws)
 

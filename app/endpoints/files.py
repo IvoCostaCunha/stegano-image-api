@@ -2,31 +2,31 @@ from flask import Blueprint, request, send_file
 import uuid
 
 from app.scripts.lsb import useLsb
-from app.scripts.aws import uploadToAWS
+from app.scripts.aws import addToBucket, getFilesUrls
+from app.scripts.fileManager import sendFile
 
 from app.constants.httpStatusCodes import *
 
 files = Blueprint('files', __name__, url_prefix= '/api/0.1/files')
 
-autorised_downloads = []
+toAWS = []
 
 @files.post('/download-request')
 def download_request():
     filesId = request.json['filesId']
     userId = request.json['userId']
 
-    filesToSend = []
+    toUploadToAWS = []
 
-    for dl in autorised_downloads:
-        if dl[0] == filesId:
-            filesToSend.append([dl[1], dl[2]])
+    for f in toAWS:
+        if f['fileId'] == filesId:
+            toUploadToAWS.append(f)
 
-    if len(filesToSend) > 0:
-        uploadToAWS(userId, filesToSend)
-        print(filesToSend[0])
-        return send_file(filesToSend[0][1], download_name = filesToSend[0][0])
+    if len(toUploadToAWS) > 0:
+        urls = addToBucket(str(userId), toUploadToAWS)
+        return { 'messages': 'Files are uploaded to AWS.', 'urls': urls}, HTTP_200_OK
     else:
-        return { 'error': 'Files could not be retrived'}, HTTP_400_BAD_REQUEST
+        return { 'error': 'Files could not be uploaded to AWS.'}, HTTP_500_INTERNAL_SERVER_ERROR
 
 @files.post('/upload')
 def upload_files():
@@ -36,19 +36,24 @@ def upload_files():
     files = []
 
     for filename, file in requestFiles:
-        # print(filename, file)
         files.append([filename, file])
+
+    if(not len(files) > 0):
+        return { 'error': 'Files not received'}, HTTP_400_BAD_REQUEST
 
     result = useLsb(files)
 
-    print(result)
-    # if result[0]['confirmation']:
-        # for files in result['signedPngFiles']:
-        #     print(result['signedPngFiles'])
-        #     for file in files:
-        #         print(file[0])
-        #         # autorised_downloads.append({'filesUuid': filesUuid, 'filename': f['filename'], 'signature': f['signature'], 'file': f['file']})
-        #         # print(autorised_downloads)
-        #     return { 'message': result['message'], 'download_id': filesUuid}, HTTP_200_OK
-    # else:
-    #     return { 'error': result['error']}, HTTP_400_BAD_REQUEST
+    for r in result:
+        r['fileId'] = filesUuid
+        toAWS.append(r)
+    
+    if(len(toAWS) > 0):
+        return { 'message': 'Files signed with success.', 'download_id': filesUuid}, HTTP_200_OK
+    else:
+        return { 'error': 'Files could not be signed.'}, HTTP_500_INTERNAL_SERVER_ERROR
+    
+@files.post('/getfilesbyid')
+def getFilesFromId():
+    id = request.json['id']
+    files = getFilesUrls(str(id))
+    return {'message': 'URLs could be retrieved', 'urls': files}

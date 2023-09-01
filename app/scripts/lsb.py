@@ -13,7 +13,7 @@ def generateUUID():
 
 # Checks if the img is transparent
 def imgIsTranparent(pixelNb):
-  if(pixelNb%3 == 0):
+  if((pixelNb)%3 == 0):
     return False
   else:
     return True
@@ -59,8 +59,9 @@ def pixelsToBin(pngPixelData):
   return pixelsBin
 
 # Returns a arrays of ints the the following format [{1, 2, 3}, ...etc] or [{1, 2, 3, T}, ...etc]
-def imgDataFromIntArrayList(intArray):
+def imgDataFromIntArrayList(intArray, lenDataExpected):
   transparency = imgIsTranparent(len(intArray))
+  print(len(intArray))
   imgData = []
   if(not transparency):
     for i in range(0, len(intArray), 3):
@@ -70,8 +71,17 @@ def imgDataFromIntArrayList(intArray):
     for i in range(0, len(intArray), 4):
       pixel = (intArray[i], intArray[i+1], intArray[i+2])
       imgData.append(pixel)
+  
+  if(len(imgData) == lenDataExpected):
+    return imgData
+  
+  else:
+    imgData = []
+    for i in range(0, len(intArray), 4):
+      pixel = (intArray[i], intArray[i+1], intArray[i+2])
+      imgData.append(pixel)
+    return imgData
     
-  return imgData
 
 # Inserts a string into each last one bit of pixel colors of an image
 # Takes an array of each color of each pixel in binary as parameter      
@@ -109,52 +119,45 @@ def insertToImgBinArray(string, pixelsBinArray):
      
 def useLsb (rawPngFiles): 
   timeBefore = datetime.now()
-  if(len(rawPngFiles) > 0):
-    signedFiles = []
-    for f in rawPngFiles:
+  signedFiles = []
+  for f in rawPngFiles:
       
-      filename = f[0]
-      pilImg = Image.open(f[1])
+    filename = f[0]
+    pilImg = Image.open(f[1])
 
-      imgWidth, imgHeight = pilImg.size
-      imgFormat = pilImg.format
-      imgExif = pilImg.getexif()
+    imgWidth, imgHeight = pilImg.size
+    imgFormat = pilImg.format
+    imgExif = pilImg.getexif()
 
-      print('\n--------------------\nImg:', filename, ' \n--------------------\nINFORMATIONS:')
-      print('(in pixels) width:', imgWidth, 'height:', imgHeight, 'total:', imgHeight*imgWidth)
-      print('format:', imgFormat)
-      print('metadata:', imgExif)
-      print('--------------------')
-      # pilImg.show(pilImg)
+    print('\n--------------------\nImg:', filename, ' \n--------------------\nINFORMATIONS:')
+    print('(in pixels) width:', imgWidth, 'height:', imgHeight, 'total:', imgHeight*imgWidth)
+    print('format:', imgFormat)
+    print('metadata:', imgExif)
+    print('--------------------')
+    # pilImg.show(pilImg)
 
-      if(imgFormat != 'PNG'):
-        return {'error': 'Files format must be PNG.', 'confirmation': False}
+    if(imgFormat != 'PNG'):
+      return {'error': 'Files format must be PNG.', 'confirmation': False}
       
-      else:
-        pilImgData = list(pilImg.getdata())
-        print('Initial size of image pixel data (in px):', len(pilImgData))
-        pilImgDataBinArray = pixelsToBin(pilImgData)
+    else:
+      pilImgData = list(pilImg.getdata())
+      print('Initial size of image pixel data (in px):', len(pilImgData))
+      pilImgDataBinArray = pixelsToBin(pilImgData)
         
-        uuid = generateUUID()
+      uuid = generateUUID()
         
-        # If true function did its job
-        if(insertToImgBinArray(uuid, pilImgDataBinArray)):
-          data = byteArrayToIntArray(pilImgDataBinArray)
-          dataList = imgDataFromIntArrayList(data)
-          print('Size of pixel data recreated (in px):', len(dataList))
-          pilImg.putdata(dataList)
-          pilImg.save(filename, 'PNG')
-          # pilImg.show()
+      # If true function did its job
+      if(insertToImgBinArray(uuid, pilImgDataBinArray)):
+        data = byteArrayToIntArray(pilImgDataBinArray)
+        dataList = imgDataFromIntArrayList(data, len(pilImgData))
+        print('Size of pixel data recreated (in px):', len(dataList))
+        pilImg.putdata(dataList)
+        # pilImg.show()
           
-          timeAfter = datetime.now()
-          execTime = timeAfter-timeBefore
-          print('Done in ' + str(execTime.seconds) + 's ' + str(execTime.microseconds) + 'ms\n--------------------')
-        else:
-          print('image too small for data')
+        timeAfter = datetime.now()
+        execTime = timeAfter-timeBefore
+        print('Done in ' + str(execTime.seconds) + 's ' + str(execTime.microseconds) + 'ms\n--------------------\n')
         
-        signedFiles.append([filename, uuid, pilImg])
-        
-    return [{'message': 'Image signed with success.', 'confirmation': True}, signedFiles]
-        
-  else:
-    return {'error': 'Files to sign could not be found.', 'confirmation': False}
+      signedFiles.append({'filename': filename, 'uuid': uuid, 'file': pilImg})
+               
+  return signedFiles
