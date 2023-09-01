@@ -16,7 +16,7 @@ region = os.environ.get("REGION")
 s3Session = boto3.Session(
     aws_access_key_id = accessKeyId,
     aws_secret_access_key = secretAccessKeyId,
-    region_name = region
+    # region_name = region
 )
 
 s3Ressource = s3Session.resource('s3')
