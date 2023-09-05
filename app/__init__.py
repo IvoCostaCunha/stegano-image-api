@@ -20,10 +20,15 @@ def create_app(test_config = None):
   cors = CORS(app)
   #app.config['CORS_HEADERS'] = 'Content-Type'
     
+  # Since Heroku auto updates with postgres://
+  uri = os.getenv("DATABASE_URL")
+  if uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://", 1)
+
   if test_config is None:
     app.config.from_mapping(
       SECRET_KEY = os.environ.get("SECRET_KEY"),
-      SQLALCHEMY_DATABASE_URI = os.environ.get("SQLALCHEMY_DATABASE_URI"),
+      SQLALCHEMY_DATABASE_URI = uri, #os.environ.get("SQLALCHEMY_DATABASE_URI"),
       SQLALCHEMY_TRACK_MODIFICATIONS = False,
       CORS_HEADERS = 'Content-Type'
     )
