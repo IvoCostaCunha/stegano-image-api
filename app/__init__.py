@@ -17,7 +17,7 @@ from app.database import db
 def create_app(test_config = None):
     
   app = Flask(__name__, instance_relative_config = True)
-  cors = CORS(app)
+  CORS(app)
   #app.config['CORS_HEADERS'] = 'Content-Type'
     
   # Since Heroku auto updates with postgres://

@@ -86,5 +86,9 @@ def getFilesUrls(id):
     os.mkdir('tmp/' + id)
 
   for f in files:
-    urls.append(getFileUrlFromPath(f.key))
+    fileId = os.path.splitext(f.key)[0]
+    fileId = fileId[-14:]
+    filename = f.key.split("/",1)[1]
+    ownerId = f.key.split("/",1)[0]
+    urls.append({'id': fileId, 'ownerId': ownerId, 'filename': filename, 'url': getFileUrlFromPath(f.key)})
   return urls

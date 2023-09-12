@@ -56,4 +56,4 @@ def upload_files():
 def getFilesFromId():
     id = request.json['id']
     files = getFilesUrls(str(id))
-    return {'message': 'URLs could be retrieved', 'urls': files}
+    return {'message': 'URLs could be retrieved', 'files': files}
