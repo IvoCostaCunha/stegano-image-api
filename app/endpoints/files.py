@@ -2,7 +2,7 @@ from flask import Blueprint, request, send_file
 import uuid
 
 from app.scripts.lsb import useLsb
-from app.scripts.aws import addToBucket, getFilesUrls
+from app.scripts.aws import addToBucket, getFilesUrls, deleteFile, checkIfFileExist
 from app.scripts.fileManager import sendFile
 
 from app.constants.httpStatusCodes import *
@@ -57,3 +57,13 @@ def getFilesFromId():
     id = request.json['id']
     files = getFilesUrls(str(id))
     return {'message': 'URLs could be retrieved', 'files': files}
+
+@files.post('/deletefile')
+def deleteFiles():
+    id = request.json['id']
+    filename = request.json['filename']
+    path = str(id) + '/' + filename
+    checkIfFileExist(id, path)
+    deleteFile(path)
+    return {'message': 'File ' + filename + ' deleted.'}
+    

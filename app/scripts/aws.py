@@ -26,10 +26,14 @@ bucket = s3Ressource.Bucket(bucketName)
 def deleteFile(filePath):
   s3Ressource.Object(bucketName, filePath).delete()
 
-def displayBucketFiles():
-  files = []
+def checkIfFileExist(id, filepath):
+  print('all')
   for file in bucket.objects.all():
-    files.append(file)
+    print(file)
+    
+  print('filter')
+  for file in bucket.objects.filter(Prefix=str(id)):
+    print(file)
   # return jsonify(files)
 
 def addToBucket(id, files):
