@@ -5,6 +5,8 @@ import bcrypt
 from datetime import datetime
 import uuid
 
+from flask_jwt_extended import get_jwt_identity, jwt_required, create_access_token, create_refresh_token
+
 from app.constants.httpStatusCodes import *
 from app.database import User, db
 
@@ -70,6 +72,8 @@ def signIn():
     user = User.query.filter_by(email = email).first()
 
     if(user is not None):
+        refresh = create_refresh_token(identity = user.id)
+        access = create_access_token(identity = user.id) 
         dbHashedPassword = user.hashpass
         dbSalt = user.salt
 
@@ -80,11 +84,14 @@ def signIn():
             
             return {
                 'message': 'User authentified with success.',
-                'id': user.id,
-                'email': user.email,
-                'username': user.username,
-                'created_at': user.created_at,
-                'token': distributedTokens[user.id]
+                'user': {                
+                    'id': user.id,
+                    'email': user.email,
+                    'username': user.username,
+                    'created_at': user.created_at,
+                    'refreshToken': refresh,
+                    'accessToken': access,
+                    }
                 }, HTTP_200_OK
         else:
             return {'error': 'User could not be authentified.'}, HTTP_401_UNAUTHORIZED
@@ -92,15 +99,11 @@ def signIn():
         return {'error': 'User not found.'}, HTTP_401_UNAUTHORIZED
 
 @auth.post('/signout')
+@jwt_required()
 def signOut():
     id = request.json['id']
-    
-    if(id not in distributedTokens.keys()):
-        return {'error': 'Id unidentified in API array of connected users.'}, HTTP_400_BAD_REQUEST
-    else:
-        distributedTokens.pop(id)
-        message = 'User with id %s disconnected.'%(id)
-        return {'message': message}, HTTP_200_OK
+    message = 'User with id %s disconnected.'%(id)
+    return {'message': message}, HTTP_200_OK
 
 @auth.post('/verifytoken')
 def verifyToken():
@@ -111,3 +114,10 @@ def verifyToken():
         return {'message': 'User token verified.'}, HTTP_200_OK
     else:
         return {'error': 'User token could not be verified.'}, HTTP_401_UNAUTHORIZED
+
+@auth.get('/refresh-token')
+@jwt_required(refresh = True)
+def refreshToken():
+    id = get_jwt_identity()
+    access = create_access_token(identity = id) 
+    return {'message': 'Access token renewed', 'accessToken': access}, HTTP_200_OK

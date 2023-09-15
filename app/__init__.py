@@ -2,6 +2,8 @@ from flask import Flask
 from flask_cors import CORS
 import os
 
+from flask_jwt_extended import JWTManager
+
 from app.endpoints.auth import auth
 from app.endpoints.files import files
 from app.endpoints.user import user
@@ -18,7 +20,6 @@ def create_app(test_config = None):
     
   app = Flask(__name__, instance_relative_config = True)
   CORS(app)
-  #app.config['CORS_HEADERS'] = 'Content-Type'
     
   # Since Heroku auto updates with postgres://
   uri = os.getenv("DATABASE_URL")
@@ -30,7 +31,8 @@ def create_app(test_config = None):
       SECRET_KEY = os.environ.get("SECRET_KEY"),
       SQLALCHEMY_DATABASE_URI = uri, #os.environ.get("SQLALCHEMY_DATABASE_URI"),
       SQLALCHEMY_TRACK_MODIFICATIONS = False,
-      CORS_HEADERS = 'Content-Type'
+      CORS_HEADERS = 'Content-Type',
+      JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY ")
     )
     
   else:
@@ -38,6 +40,8 @@ def create_app(test_config = None):
 
   db.app = app
   db.init_app(app)
+  
+  JWTManager(app)
   
   app.register_blueprint(fileManager)
   app.register_blueprint(lsb)

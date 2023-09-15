@@ -1,6 +1,8 @@
 from flask import Blueprint, request, send_file
 import uuid
 
+from flask_jwt_extended import jwt_required
+
 from app.scripts.lsb import useLsb
 from app.scripts.aws import addToBucket, getFilesUrls, deleteFile, checkIfFileExist
 from app.scripts.fileManager import sendFile
@@ -12,6 +14,7 @@ files = Blueprint('files', __name__, url_prefix= '/api/0.1/files')
 toAWS = []
 
 @files.post('/download-request')
+@jwt_required()
 def download_request():
     filesId = request.json['filesId']
     userId = request.json['userId']
@@ -29,6 +32,7 @@ def download_request():
         return { 'error': 'Files could not be uploaded to AWS.'}, HTTP_500_INTERNAL_SERVER_ERROR
 
 @files.post('/upload')
+@jwt_required()
 def upload_files():
     requestFiles = request.files.items()
 
@@ -53,12 +57,14 @@ def upload_files():
         return { 'error': 'Files could not be signed.'}, HTTP_500_INTERNAL_SERVER_ERROR
     
 @files.post('/getfilesbyid')
+@jwt_required()
 def getFilesFromId():
     id = request.json['id']
     files = getFilesUrls(str(id))
     return {'message': 'URLs could be retrieved', 'files': files}
 
 @files.post('/deletefile')
+@jwt_required()
 def deleteFiles():
     id = request.json['id']
     filename = request.json['filename']

@@ -2,6 +2,8 @@ from flask import Blueprint, request
 from markupsafe import escape
 import validators
 
+from flask_jwt_extended import jwt_required
+
 from app.database import User, db
 
 from app.constants.httpStatusCodes import *
@@ -28,6 +30,7 @@ def getUser(id):
         return {'error': 'User with id %s could not be found.'%(id)}, HTTP_400_BAD_REQUEST
     
 @user.post('/updateuser')
+@jwt_required()
 def updateUser():
     id = request.json['id']
     username = request.json['username']
